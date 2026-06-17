@@ -3,6 +3,8 @@ package com.example.compound.service.v2;
 import com.example.compound.dto.v2.StrategyTemplateDto;
 import com.example.compound.dto.v2.TemplateDetailDto;
 
+import org.springframework.stereotype.Service;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +13,7 @@ import java.util.Optional;
 /**
  * 策略模板服务 — 管理3个新手策略模板的元数据和默认条件
  */
+@Service
 public class StrategyTemplateService {
 
     /** 策略编码常量 */

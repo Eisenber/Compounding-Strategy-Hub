@@ -5,6 +5,8 @@ import com.example.compound.dto.v2.ScreenRequestDto;
 import com.example.compound.dto.v2.ScreenResponseDto;
 import com.example.compound.dto.v2.StockItemDto;
 
+import org.springframework.stereotype.Service;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -13,6 +15,7 @@ import java.util.stream.Collectors;
  * <p>
  * MVP 阶段基于 MockStockDataProvider 的本地数据运行，不接外部数据源。
  */
+@Service
 public class StockScreeningService {
 
     private final StrategyTemplateService templateService;

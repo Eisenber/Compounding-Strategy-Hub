@@ -21,9 +21,10 @@ public class StrategyController {
     private final StrategyTemplateService templateService;
     private final StockScreeningService screeningService;
 
-    public StrategyController() {
-        this.templateService = new StrategyTemplateService();
-        this.screeningService = new StockScreeningService(templateService);
+    public StrategyController(StrategyTemplateService templateService,
+                               StockScreeningService screeningService) {
+        this.templateService = templateService;
+        this.screeningService = screeningService;
     }
 
     /**
