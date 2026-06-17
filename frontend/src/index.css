@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-body;
+    min-height: 100vh;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #c8cad4;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a1a4b5;
+  }
+}
+
+@layer components {
+  /* Number formatting */
+  .num {
+    @apply font-number tabular-nums tracking-tight;
+  }
+
+  /* Card base */
+  .card {
+    @apply bg-white rounded-2xl shadow-card transition-shadow duration-300;
+  }
+  .card:hover {
+    @apply shadow-card-hover;
+  }
+
+  /* Input base */
+  .input-field {
+    @apply w-full px-4 py-2.5 bg-cream-50 border border-cream-300 rounded-xl
+           text-ink-900 placeholder-ink-300
+           transition-all duration-200
+           focus:outline-none focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20
+           hover:border-ink-200;
+  }
+
+  .input-label {
+    @apply block text-sm font-medium text-ink-600 mb-1.5;
+  }
+
+  /* Button base */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
+           font-medium text-sm transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-ink-900 text-white
+           hover:bg-ink-800
+           focus:ring-ink-900
+           active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply btn bg-white text-ink-700 border border-ink-200
+           hover:bg-cream-50 hover:border-ink-300
+           focus:ring-ink-300
+           active:scale-[0.98];
+  }
+
+  .btn-gold {
+    @apply btn bg-gold-500 text-white
+           hover:bg-gold-600
+           focus:ring-gold-400
+           active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-ink-500
+           hover:text-ink-700 hover:bg-cream-100
+           focus:ring-ink-300;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-best {
+    @apply badge bg-gold-100 text-gold-800;
+  }
+
+  /* Divider */
+  .divider {
+    @apply h-px bg-gradient-to-r from-transparent via-ink-200 to-transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Staggered animation delays */
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+  .delay-400 {
+    animation-delay: 400ms;
+  }
+  .delay-500 {
+    animation-delay: 500ms;
+  }
+
+  /* Fade in up animation */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out both;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out both;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+}

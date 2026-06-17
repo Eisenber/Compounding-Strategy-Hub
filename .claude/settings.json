@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"e:/复利选股/backend/src/main/java/com/example/compound/controller\" \"e:/复利选股/backend/src/main/java/com/example/compound/dto\" \"e:/复利选股/backend/src/main/java/com/example/compound/service\" \"e:/复利选股/backend/src/main/java/com/example/compound/config\" \"e:/复利选股/backend/src/main/java/com/example/compound/exception\" \"e:/复利选股/backend/src/main/resources\")"
+    ],
+    "additionalDirectories": [
+      "e:\\复利选股\\backend\\src\\main\\java\\com\\example\\compound"
+    ]
+  }
+}
