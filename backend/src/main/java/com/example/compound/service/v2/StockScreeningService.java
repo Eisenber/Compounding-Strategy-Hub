@@ -1,6 +1,6 @@
 package com.example.compound.service.v2;
 
-import com.example.compound.data.v2.MockStockDataProvider;
+import com.example.compound.repository.v2.StockRepository;
 import com.example.compound.dto.v2.ScreenRequestDto;
 import com.example.compound.dto.v2.ScreenResponseDto;
 import com.example.compound.dto.v2.StockItemDto;
@@ -16,9 +16,12 @@ import java.util.stream.Collectors;
 public class StockScreeningService {
 
     private final StrategyTemplateService templateService;
+    private final StockRepository stockRepository;
 
-    public StockScreeningService(StrategyTemplateService templateService) {
+    public StockScreeningService(StrategyTemplateService templateService,
+                                  StockRepository stockRepository) {
         this.templateService = templateService;
+        this.stockRepository = stockRepository;
     }
 
     /**
@@ -34,7 +37,7 @@ public class StockScreeningService {
         }
 
         // 1. 从mock数据源获取全量股票
-        List<StockItemDto> allStocks = MockStockDataProvider.getAllStocks();
+        List<StockItemDto> allStocks = stockRepository.getAllStocks();
 
         // 2. 应用筛选条件（交集）
         List<StockItemDto> filtered = applyFilters(allStocks, strategyCode, filters);
@@ -86,18 +89,19 @@ public class StockScreeningService {
                 .collect(Collectors.toList());
     }
 
-    /** 通用排除规则：ST、停牌、次新股 */
+    /** 通用排除规则：ST、停牌、次新股 — 使用真实数据字段 */
     private boolean isExcludedByCommonRules(StockItemDto s, Map<String, Object> filters) {
-        // 排除 ST
-        if (getBoolean(filters, "excludeSt") && s.getName() != null && s.getName().contains("ST")) {
+        // 排除 ST（使用真实 isSt 字段）
+        if (getBoolean(filters, "excludeSt") && s.isSt()) {
             return true;
         }
-        // 排除停牌（价格<=0 或 PE为负且营收极度萎缩视为停牌信号）
-        if (getBoolean(filters, "excludeSuspended") && s.getPrice() <= 0) {
+        // 排除停牌（使用真实 isSuspended 字段）
+        if (getBoolean(filters, "excludeSuspended") && s.isSuspended()) {
             return true;
         }
-        // 排除上市未满180天（用代码 688xxx 标识次新股）
-        if (filters.containsKey("minListingDays") && s.getSymbol().startsWith("688")) {
+        // 排除上市未满 N 天（使用真实 listingDays 字段）
+        Integer minDays = getInt(filters, "minListingDays");
+        if (minDays != null && s.getListingDays() > 0 && s.getListingDays() < minDays) {
             return true;
         }
         return false;
@@ -273,5 +277,16 @@ public class StockScreeningService {
         if (v == null) return false;
         if (v instanceof Boolean b) return b;
         return Boolean.parseBoolean(v.toString());
+    }
+
+    private static Integer getInt(Map<String, Object> map, String key) {
+        Object v = map.get(key);
+        if (v == null) return null;
+        if (v instanceof Number n) return n.intValue();
+        try {
+            return Integer.parseInt(v.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }
