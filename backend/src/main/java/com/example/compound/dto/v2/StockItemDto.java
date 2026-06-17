@@ -19,6 +19,9 @@ public class StockItemDto {
     private double dividendYield;
     private double marketCap;
     private double debtRatio;
+    private boolean isSt;
+    private boolean isSuspended;
+    private int listingDays;
     private String reason;
     private List<String> riskTags;
 
@@ -116,6 +119,30 @@ public class StockItemDto {
 
     public void setDebtRatio(double debtRatio) {
         this.debtRatio = debtRatio;
+    }
+
+    public boolean isSt() {
+        return isSt;
+    }
+
+    public void setSt(boolean isSt) {
+        this.isSt = isSt;
+    }
+
+    public boolean isSuspended() {
+        return isSuspended;
+    }
+
+    public void setSuspended(boolean isSuspended) {
+        this.isSuspended = isSuspended;
+    }
+
+    public int getListingDays() {
+        return listingDays;
+    }
+
+    public void setListingDays(int listingDays) {
+        this.listingDays = listingDays;
     }
 
     public String getReason() {
