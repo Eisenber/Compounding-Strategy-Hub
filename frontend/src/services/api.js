@@ -51,7 +51,11 @@ export async function compareScenarios(scenarios) {
     let msg = `请求失败 (${res.status})`;
     try {
       const err = JSON.parse(body);
-      if (err.message) msg = err.message;
+      if (Array.isArray(err.messages) && err.messages.length > 0) {
+        msg = err.messages[0];
+      } else if (err.message) {
+        msg = err.message;
+      }
     } catch {
       // use default msg
     }

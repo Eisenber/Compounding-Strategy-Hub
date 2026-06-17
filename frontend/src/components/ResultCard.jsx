@@ -20,7 +20,7 @@ const multipleFormatter = new Intl.NumberFormat('zh-CN', {
   maximumFractionDigits: 2,
 });
 
-const ResultCard = memo(function ResultCard({ scenario, rank, isBest }) {
+const ResultCard = memo(function ResultCard({ scenario, isBest }) {
   const profitPct =
     scenario.totalInvested > 0
       ? (scenario.totalProfit / scenario.totalInvested) * 100
@@ -42,11 +42,8 @@ const ResultCard = memo(function ResultCard({ scenario, rank, isBest }) {
         </div>
       )}
 
-      {/* Name and Rank */}
+      {/* Name */}
       <div className="flex items-center gap-2 mb-5">
-        <span className="text-xs font-bold text-ink-400 bg-cream-100 w-6 h-6 rounded-full flex items-center justify-center">
-          {rank}
-        </span>
         <h3 className="font-semibold text-ink-800 text-base truncate">
           {scenario.name}
         </h3>

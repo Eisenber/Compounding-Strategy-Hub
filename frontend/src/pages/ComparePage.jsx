@@ -266,7 +266,6 @@ export default function ComparePage() {
                   <ResultCard
                     key={s.name}
                     scenario={s}
-                    rank={i + 1}
                     isBest={s.name === results.bestScenarioName}
                   />
                 ))}

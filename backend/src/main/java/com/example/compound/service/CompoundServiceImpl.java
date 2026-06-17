@@ -25,7 +25,7 @@ public class CompoundServiceImpl implements CompoundService {
                 .orElse(results.get(0));
 
         // 生成结论
-        List<String> insights = generateInsights(results);
+        List<String> insights = generateInsights(results, inputs);
 
         CompareResponse response = new CompareResponse();
         response.setBestScenarioName(best.getName());
@@ -52,8 +52,9 @@ public class CompoundServiceImpl implements CompoundService {
         yearlyPoints.add(new YearlyPoint(0, round2(currentAmount)));
 
         for (int month = 1; month <= totalMonths; month++) {
-            // 每月末：先追加定投金额，再按当月收益率增长
-            currentAmount = (currentAmount + input.getMonthlyContribution()) * (1 + monthlyNetRate);
+            // 每月末：先按当月收益率增长，再追加定投金额
+            currentAmount = currentAmount * (1 + monthlyNetRate);
+            currentAmount = currentAmount + input.getMonthlyContribution();
 
             // 每年末记录一个数据点
             if (month % 12 == 0) {
@@ -83,7 +84,7 @@ public class CompoundServiceImpl implements CompoundService {
     /**
      * 生成对比结论（不构成投资建议）
      */
-    private List<String> generateInsights(List<ScenarioResult> results) {
+    private List<String> generateInsights(List<ScenarioResult> results, List<ScenarioInput> inputs) {
         List<String> insights = new ArrayList<>();
 
         if (results.size() < 2) {
@@ -105,19 +106,19 @@ public class CompoundServiceImpl implements CompoundService {
                     best.getName(), worst.getName(), gap));
         }
 
-        // 结论2：费率对收益的影响
-        ScenarioResult highestFee = results.stream()
-                .max(Comparator.comparingDouble(r -> {
-                    // 这里我们比较 profitMultiple，低费率通常对应高倍数
-                    return r.getProfitMultiple();
-                }))
-                .orElse(null);
+        // 结论2：费率对收益的影响（仅当方案间存在明显费率差异时展示）
+        double maxFeeRate = inputs.stream()
+                .mapToDouble(ScenarioInput::getAnnualFeeRate)
+                .max().orElse(0);
+        double minFeeRate = inputs.stream()
+                .mapToDouble(ScenarioInput::getAnnualFeeRate)
+                .min().orElse(0);
 
-        if (results.size() >= 2) {
+        if (maxFeeRate - minFeeRate > 0.001) {
             insights.add("费用率在长期复利中会不断侵蚀收益，相同收益率下费率越低的方案最终资产越高。");
         }
 
-        // 结论3：定投效应
+        // 结论3：定投效应（仅当存在月定投方案时展示）
         long hasContribution = results.stream()
                 .filter(r -> r.getTotalInvested() > 0)
                 .count();
