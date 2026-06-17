@@ -54,13 +54,20 @@ export default function HomePage() {
           </p>
 
           {/* CTA */}
-          <div className="animate-fade-in-up delay-300 mt-10">
+          <div className="animate-fade-in-up delay-300 mt-10 flex items-center justify-center gap-3">
             <button
               onClick={() => navigate('/compare')}
               className="btn-gold px-8 py-4 text-base rounded-2xl shadow-lg shadow-gold-500/25 hover:shadow-xl hover:shadow-gold-500/30"
             >
               开始对比
               <span className="text-lg ml-1">→</span>
+            </button>
+            <button
+              onClick={() => navigate('/strategy')}
+              className="btn-secondary px-6 py-4 text-base rounded-2xl border-cream-300"
+            >
+              选股策略
+              <span className="text-sm ml-1">Beta</span>
             </button>
           </div>
 
