@@ -8,7 +8,7 @@ fetch_stocks.py — 拉取全A股行情与财务数据，写入 SQLite。
 
 import sqlite3
 import sys
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 
 DB_PATH = "data/compound.db"
 
@@ -57,6 +57,7 @@ def init_db(conn):
 def fetch_spot_data():
     """拉取全A股实时行情（东方财富源）"""
     import akshare as ak
+    import pandas as pd
     df = ak.stock_zh_a_spot_em()
     # 列重命名为英文
     col_map = {
@@ -170,6 +171,7 @@ def clean_and_merge(spot_df, finance_df):
 
 def write_to_db(conn, df):
     import numpy as np
+    import pandas as pd
 
     # 替换 NaN 为 None（SQLite 用 NULL）
     df = df.where(pd.notna(df), None)
@@ -177,7 +179,6 @@ def write_to_db(conn, df):
     cursor = conn.cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     count = 0
-    errors = []
 
     try:
         cursor.execute("BEGIN")
