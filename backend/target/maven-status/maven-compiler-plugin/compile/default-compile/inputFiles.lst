@@ -15,6 +15,7 @@ E:\复利选股\backend\src\main\java\com\example\compound\dto\v2\StrategyTempla
 E:\复利选股\backend\src\main\java\com\example\compound\dto\v2\TemplateDetailDto.java
 E:\复利选股\backend\src\main\java\com\example\compound\dto\YearlyPoint.java
 E:\复利选股\backend\src\main\java\com\example\compound\exception\GlobalExceptionHandler.java
+E:\复利选股\backend\src\main\java\com\example\compound\repository\v2\StockRepository.java
 E:\复利选股\backend\src\main\java\com\example\compound\service\CompoundService.java
 E:\复利选股\backend\src\main\java\com\example\compound\service\CompoundServiceImpl.java
 E:\复利选股\backend\src\main\java\com\example\compound\service\v2\StockScreeningService.java

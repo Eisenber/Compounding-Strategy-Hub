@@ -102,9 +102,10 @@ public class StockScreeningService {
         if (getBoolean(filters, "excludeSuspended") && s.isSuspended()) {
             return true;
         }
-        // 排除上市未满 N 天（使用真实 listingDays 字段）
+        // 排除上市未满 N 天（listingDays 为 null 时跳过检查）
         Integer minDays = getInt(filters, "minListingDays");
-        if (minDays != null && s.getListingDays() > 0 && s.getListingDays() < minDays) {
+        Integer listingDays = s.getListingDays();
+        if (minDays != null && listingDays != null && listingDays > 0 && listingDays < minDays) {
             return true;
         }
         return false;
@@ -121,50 +122,58 @@ public class StockScreeningService {
         };
     }
 
+    /** 安全比较：stockVal 为 null（数据缺失）时跳过该筛选条件 */
+    private static boolean exceeds(Double stockVal, Double threshold, boolean isMax) {
+        if (stockVal == null || threshold == null) return false;
+        return isMax ? stockVal > threshold : stockVal < threshold;
+    }
+
     private boolean passesLowValuation(StockItemDto s, Map<String, Object> filters) {
-        if (getDouble(filters, "maxPe") != null && s.getPeTtm() > getDouble(filters, "maxPe")) return false;
-        if (getDouble(filters, "maxPb") != null && s.getPb() > getDouble(filters, "maxPb")) return false;
-        if (getDouble(filters, "minRoe") != null && s.getRoe() < getDouble(filters, "minRoe")) return false;
-        if (getDouble(filters, "minProfitGrowth") != null && s.getProfitGrowth() < getDouble(filters, "minProfitGrowth"))
-            return false;
+        // 排除负 PE（亏损公司不是"低估值"而是"无估值"）
+        if (s.getPeTtm() != null && s.getPeTtm() < 0) return false;
+        if (exceeds(s.getPeTtm(), getDouble(filters, "maxPe"), true)) return false;
+        if (exceeds(s.getPb(), getDouble(filters, "maxPb"), true)) return false;
+        if (exceeds(s.getRoe(), getDouble(filters, "minRoe"), false)) return false;
+        if (exceeds(s.getProfitGrowth(), getDouble(filters, "minProfitGrowth"), false)) return false;
         return true;
     }
 
     private boolean passesHighDividend(StockItemDto s, Map<String, Object> filters) {
-        if (getDouble(filters, "minDividendYield") != null && s.getDividendYield() < getDouble(filters, "minDividendYield"))
-            return false;
-        if (getDouble(filters, "minRoe") != null && s.getRoe() < getDouble(filters, "minRoe")) return false;
-        if (getDouble(filters, "maxDebtRatio") != null && s.getDebtRatio() > getDouble(filters, "maxDebtRatio"))
-            return false;
+        if (exceeds(s.getDividendYield(), getDouble(filters, "minDividendYield"), false)) return false;
+        if (exceeds(s.getRoe(), getDouble(filters, "minRoe"), false)) return false;
+        if (exceeds(s.getDebtRatio(), getDouble(filters, "maxDebtRatio"), true)) return false;
         // 连续分红年限在mock数据中简化为：股息率>0的默认视为满足
         return true;
     }
 
     private boolean passesQualityGrowth(StockItemDto s, Map<String, Object> filters) {
-        if (getDouble(filters, "minRoe") != null && s.getRoe() < getDouble(filters, "minRoe")) return false;
-        if (getDouble(filters, "minRevenueGrowth") != null && s.getRevenueGrowth() < getDouble(filters, "minRevenueGrowth"))
-            return false;
-        if (getDouble(filters, "minProfitGrowth") != null && s.getProfitGrowth() < getDouble(filters, "minProfitGrowth"))
-            return false;
-        if (getDouble(filters, "maxDebtRatio") != null && s.getDebtRatio() > getDouble(filters, "maxDebtRatio"))
-            return false;
-        if (getDouble(filters, "maxPe") != null && s.getPeTtm() > getDouble(filters, "maxPe")) return false;
+        // 排除负 PE（亏损公司不具备成长质量基础）
+        if (s.getPeTtm() != null && s.getPeTtm() < 0) return false;
+        if (exceeds(s.getRoe(), getDouble(filters, "minRoe"), false)) return false;
+        if (exceeds(s.getRevenueGrowth(), getDouble(filters, "minRevenueGrowth"), false)) return false;
+        if (exceeds(s.getProfitGrowth(), getDouble(filters, "minProfitGrowth"), false)) return false;
+        if (exceeds(s.getDebtRatio(), getDouble(filters, "maxDebtRatio"), true)) return false;
+        if (exceeds(s.getPeTtm(), getDouble(filters, "maxPe"), true)) return false;
         return true;
     }
 
     // ---------- 入选原因生成 ----------
 
+    private static String fmtD(Double v) {
+        return v != null ? String.format("%.1f", v) : "缺失";
+    }
+
     private String generateReason(String strategyCode, StockItemDto s, Map<String, Object> filters) {
         return switch (strategyCode) {
             case StrategyTemplateService.LOW_VALUATION ->
-                    String.format("PE(TTM)=%.1f 和 PB=%.2f 均低于筛选阈值，同时 ROE=%.1f%% 达到基本要求",
-                            s.getPeTtm(), s.getPb(), s.getRoe());
+                    String.format("PE(TTM)=%s 和 PB=%s 均低于筛选阈值，同时 ROE=%s%% 达到基本要求",
+                            fmtD(s.getPeTtm()), fmtD(s.getPb()), fmtD(s.getRoe()));
             case StrategyTemplateService.HIGH_DIVIDEND ->
-                    String.format("股息率=%.1f%% 高于阈值，ROE=%.1f%% 达标，资产负债率=%.1f%% 在可接受范围内",
-                            s.getDividendYield(), s.getRoe(), s.getDebtRatio());
+                    String.format("股息率=%s%%，ROE=%s%%，资产负债率=%s%% 在可接受范围内",
+                            fmtD(s.getDividendYield()), fmtD(s.getRoe()), fmtD(s.getDebtRatio()));
             case StrategyTemplateService.QUALITY_GROWTH ->
-                    String.format("ROE=%.1f%%、营收增长=%.1f%%、净利润增长=%.1f%% 同时达到成长条件",
-                            s.getRoe(), s.getRevenueGrowth(), s.getProfitGrowth());
+                    String.format("ROE=%s%%、营收增长=%s%%、净利润增长=%s%% 同时达到成长条件",
+                            fmtD(s.getRoe()), fmtD(s.getRevenueGrowth()), fmtD(s.getProfitGrowth()));
             default -> "符合当前策略筛选条件";
         };
     }
@@ -174,17 +183,21 @@ public class StockScreeningService {
     private List<String> generateRiskTags(String strategyCode, StockItemDto s) {
         List<String> tags = new ArrayList<>();
 
-        // 通用风险
-        if (s.getDebtRatio() > 70) {
+        // 通用风险（null 值跳过）
+        Double dr = s.getDebtRatio();
+        if (dr != null && dr > 70) {
             tags.add("高负债风险");
         }
-        if (s.getPeTtm() > 50 || s.getPeTtm() < 0) {
+        Double pe = s.getPeTtm();
+        if (pe != null && (pe > 50 || pe < 0)) {
             tags.add("高估值风险");
         }
-        if (s.getProfitGrowth() < 0) {
+        Double pg = s.getProfitGrowth();
+        if (pg != null && pg < 0) {
             tags.add("盈利下滑风险");
         }
-        if (s.getRevenueGrowth() < 0) {
+        Double rg = s.getRevenueGrowth();
+        if (rg != null && rg < 0) {
             tags.add("营收萎缩风险");
         }
 
@@ -192,17 +205,18 @@ public class StockScreeningService {
         switch (strategyCode) {
             case StrategyTemplateService.LOW_VALUATION -> {
                 if (isCyclical(s)) tags.add("周期行业风险");
-                if (s.getProfitGrowth() < 5 && s.getRevenueGrowth() < 5) {
+                if (pg != null && pg < 5 && rg != null && rg < 5) {
                     tags.add("价值陷阱风险");
                 }
             }
             case StrategyTemplateService.HIGH_DIVIDEND -> {
-                if (s.getDividendYield() > 7) {
+                Double dy = s.getDividendYield();
+                if (dy != null && dy > 7) {
                     tags.add("分红波动风险");
                 }
             }
             case StrategyTemplateService.QUALITY_GROWTH -> {
-                if (s.getPeTtm() > 30) {
+                if (pe != null && pe > 30) {
                     tags.add("高估值风险");
                 }
                 tags.add("成长不确定性风险");
@@ -228,19 +242,24 @@ public class StockScreeningService {
 
     // ---------- 排序 ----------
 
+    /** 构建 null-safe 数值比较器（null 值排在最后） */
+    private static Comparator<Double> nullSafeComparator(boolean desc) {
+        Comparator<Double> natural = Comparator.nullsLast(Double::compareTo);
+        return desc ? natural.reversed() : natural;
+    }
+
     private void sortStocks(List<StockItemDto> stocks, String sortBy, String sortDirection) {
         boolean desc = "desc".equalsIgnoreCase(sortDirection);
         Comparator<StockItemDto> cmp = switch (sortBy) {
-            case "dividendYield" -> Comparator.comparingDouble(StockItemDto::getDividendYield);
-            case "peTtm" -> Comparator.comparingDouble(StockItemDto::getPeTtm);
-            case "pb" -> Comparator.comparingDouble(StockItemDto::getPb);
-            case "roe" -> Comparator.comparingDouble(StockItemDto::getRoe);
-            case "revenueGrowth" -> Comparator.comparingDouble(StockItemDto::getRevenueGrowth);
-            case "profitGrowth" -> Comparator.comparingDouble(StockItemDto::getProfitGrowth);
-            case "marketCap" -> Comparator.comparingDouble(StockItemDto::getMarketCap);
-            default -> Comparator.comparingDouble(StockItemDto::getPeTtm);
+            case "dividendYield" -> Comparator.comparing(StockItemDto::getDividendYield, nullSafeComparator(desc));
+            case "peTtm" -> Comparator.comparing(StockItemDto::getPeTtm, nullSafeComparator(desc));
+            case "pb" -> Comparator.comparing(StockItemDto::getPb, nullSafeComparator(desc));
+            case "roe" -> Comparator.comparing(StockItemDto::getRoe, nullSafeComparator(desc));
+            case "revenueGrowth" -> Comparator.comparing(StockItemDto::getRevenueGrowth, nullSafeComparator(desc));
+            case "profitGrowth" -> Comparator.comparing(StockItemDto::getProfitGrowth, nullSafeComparator(desc));
+            case "marketCap" -> Comparator.comparing(StockItemDto::getMarketCap, nullSafeComparator(desc));
+            default -> Comparator.comparing(StockItemDto::getPeTtm, nullSafeComparator(desc));
         };
-        if (desc) cmp = cmp.reversed();
         stocks.sort(cmp);
     }
 

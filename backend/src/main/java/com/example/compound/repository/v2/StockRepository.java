@@ -58,13 +58,18 @@ public class StockRepository {
             dto.setDebtRatio(getDouble(rs, "debt_ratio"));
             dto.setSt(rs.getInt("is_st") == 1);
             dto.setSuspended(rs.getInt("is_suspended") == 1);
-            dto.setListingDays(rs.getInt("listing_days"));
+            dto.setListingDays(getInteger(rs, "listing_days"));
             return dto;
         }
 
-        private double getDouble(ResultSet rs, String column) throws SQLException {
+        private Double getDouble(ResultSet rs, String column) throws SQLException {
             double v = rs.getDouble(column);
-            return rs.wasNull() ? 0.0 : v;
+            return rs.wasNull() ? null : v;
+        }
+
+        private Integer getInteger(ResultSet rs, String column) throws SQLException {
+            int v = rs.getInt(column);
+            return rs.wasNull() ? null : v;
         }
     }
 }

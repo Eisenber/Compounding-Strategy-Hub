@@ -8,21 +8,21 @@ import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
+/**
+ * CORS 配置 — 本地开发工具，放开所有跨域请求。
+ * 生产环境部署时应限制 allowedOriginPatterns。
+ */
 @Configuration
 public class CorsConfig {
 
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:5173",   // Vite
-                "http://localhost:3000",   // Next.js / React dev server
-                "http://127.0.0.1:5173",
-                "http://127.0.0.1:3000"
-        ));
-        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        // 本地工具允许所有来源
+        config.setAllowedOriginPatterns(List.of("*"));
+        config.setAllowedMethods(List.of("*"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", config);

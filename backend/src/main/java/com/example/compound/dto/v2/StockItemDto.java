@@ -10,18 +10,18 @@ public class StockItemDto {
     private String symbol;
     private String name;
     private String industry;
-    private double price;
-    private double peTtm;
-    private double pb;
-    private double roe;
-    private double revenueGrowth;
-    private double profitGrowth;
-    private double dividendYield;
-    private double marketCap;
-    private double debtRatio;
+    private Double price;           // 可为 null（停牌等）
+    private Double peTtm;           // 可为 null（数据缺失）
+    private Double pb;              // 可为 null
+    private Double roe;             // 可为 null
+    private Double revenueGrowth;   // 可为 null
+    private Double profitGrowth;    // 可为 null
+    private Double dividendYield;   // 可为 null
+    private Double marketCap;       // 可为 null
+    private Double debtRatio;       // 可为 null
     private boolean isSt;
     private boolean isSuspended;
-    private int listingDays;
+    private Integer listingDays;    // 可为 null
     private String reason;
     private List<String> riskTags;
 
@@ -49,75 +49,75 @@ public class StockItemDto {
         this.industry = industry;
     }
 
-    public double getPrice() {
+    public Double getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(Double price) {
         this.price = price;
     }
 
-    public double getPeTtm() {
+    public Double getPeTtm() {
         return peTtm;
     }
 
-    public void setPeTtm(double peTtm) {
+    public void setPeTtm(Double peTtm) {
         this.peTtm = peTtm;
     }
 
-    public double getPb() {
+    public Double getPb() {
         return pb;
     }
 
-    public void setPb(double pb) {
+    public void setPb(Double pb) {
         this.pb = pb;
     }
 
-    public double getRoe() {
+    public Double getRoe() {
         return roe;
     }
 
-    public void setRoe(double roe) {
+    public void setRoe(Double roe) {
         this.roe = roe;
     }
 
-    public double getRevenueGrowth() {
+    public Double getRevenueGrowth() {
         return revenueGrowth;
     }
 
-    public void setRevenueGrowth(double revenueGrowth) {
+    public void setRevenueGrowth(Double revenueGrowth) {
         this.revenueGrowth = revenueGrowth;
     }
 
-    public double getProfitGrowth() {
+    public Double getProfitGrowth() {
         return profitGrowth;
     }
 
-    public void setProfitGrowth(double profitGrowth) {
+    public void setProfitGrowth(Double profitGrowth) {
         this.profitGrowth = profitGrowth;
     }
 
-    public double getDividendYield() {
+    public Double getDividendYield() {
         return dividendYield;
     }
 
-    public void setDividendYield(double dividendYield) {
+    public void setDividendYield(Double dividendYield) {
         this.dividendYield = dividendYield;
     }
 
-    public double getMarketCap() {
+    public Double getMarketCap() {
         return marketCap;
     }
 
-    public void setMarketCap(double marketCap) {
+    public void setMarketCap(Double marketCap) {
         this.marketCap = marketCap;
     }
 
-    public double getDebtRatio() {
+    public Double getDebtRatio() {
         return debtRatio;
     }
 
-    public void setDebtRatio(double debtRatio) {
+    public void setDebtRatio(Double debtRatio) {
         this.debtRatio = debtRatio;
     }
 
@@ -137,11 +137,11 @@ public class StockItemDto {
         this.isSuspended = isSuspended;
     }
 
-    public int getListingDays() {
+    public Integer getListingDays() {
         return listingDays;
     }
 
-    public void setListingDays(int listingDays) {
+    public void setListingDays(Integer listingDays) {
         this.listingDays = listingDays;
     }
 
