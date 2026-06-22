@@ -129,3 +129,41 @@ export async function screenStocks(params) {
 
   return res.json();
 }
+
+export async function askKnowledgeBase(params) {
+  const res = await fetch(`${API_BASE}/v1/knowledge/ask`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    let msg = `知识库问答请求失败 (${res.status})`;
+    try {
+      const err = JSON.parse(body);
+      if (Array.isArray(err.messages) && err.messages.length > 0) {
+        msg = err.messages[0];
+      } else if (err.message) {
+        msg = err.message;
+      } else if (err.error) {
+        msg = err.error;
+      }
+    } catch {
+      // use default msg
+    }
+    throw new Error(msg);
+  }
+
+  return res.json();
+}
+
+export async function reindexKnowledgeBase() {
+  const res = await fetch(`${API_BASE}/v1/knowledge/reindex`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    throw new Error(`知识库重建索引失败 (${res.status})`);
+  }
+  return res.json();
+}

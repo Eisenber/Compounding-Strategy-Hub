@@ -1,8 +1,5 @@
-com\example\compound\CompoundApplication.class
-com\example\compound\dto\CompareRequest.class
 com\example\compound\dto\ScenarioInput.class
 com\example\compound\dto\CompareResponse.class
-com\example\compound\config\CorsConfig.class
 com\example\compound\exception\GlobalExceptionHandler.class
 com\example\compound\controller\CompoundController.class
 com\example\compound\service\CompoundServiceImpl.class
@@ -10,3 +7,6 @@ com\example\compound\service\CompoundService.class
 com\example\compound\dto\ScenarioResult.class
 com\example\compound\controller\HealthController.class
 com\example\compound\dto\YearlyPoint.class
+com\example\compound\CompoundApplication.class
+com\example\compound\dto\CompareRequest.class
+com\example\compound\config\CorsConfig.class
