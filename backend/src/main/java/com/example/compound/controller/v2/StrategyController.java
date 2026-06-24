@@ -1,6 +1,8 @@
 package com.example.compound.controller.v2;
 
 import com.example.compound.dto.v2.*;
+import com.example.compound.repository.v2.StockRepository;
+import com.example.compound.service.DataRefreshService;
 import com.example.compound.service.v2.StockScreeningService;
 import com.example.compound.service.v2.StrategyTemplateService;
 
@@ -20,11 +22,17 @@ public class StrategyController {
 
     private final StrategyTemplateService templateService;
     private final StockScreeningService screeningService;
+    private final StockRepository stockRepository;
+    private final DataRefreshService dataRefreshService;
 
     public StrategyController(StrategyTemplateService templateService,
-                               StockScreeningService screeningService) {
+                               StockScreeningService screeningService,
+                               StockRepository stockRepository,
+                               DataRefreshService dataRefreshService) {
         this.templateService = templateService;
         this.screeningService = screeningService;
+        this.stockRepository = stockRepository;
+        this.dataRefreshService = dataRefreshService;
     }
 
     /**
@@ -83,5 +91,36 @@ public class StrategyController {
 
         ScreenResponseDto response = screeningService.screen(request);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/v2/strategies/data-status
+     * <p>
+     * 返回数据新鲜度状态：最近更新时间、股票数量、是否在刷新中等
+     */
+    @GetMapping("/data-status")
+    public ResponseEntity<DataStatusDto> getDataStatus() {
+        DataStatusDto status = stockRepository.getDataStatus();
+        status.setRefreshing(dataRefreshService.isRefreshing());
+        return ResponseEntity.ok(status);
+    }
+
+    /**
+     * POST /api/v2/strategies/refresh
+     * <p>
+     * 手动触发数据刷新（异步执行，立即返回）。
+     * 如果已有刷新在进行中，返回 409。
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<?> triggerRefresh() {
+        if (dataRefreshService.isRefreshing()) {
+            return ResponseEntity.status(409).body(
+                    Map.of("error", "数据更新正在进行中，请稍后再试", "isRefreshing", true)
+            );
+        }
+        dataRefreshService.triggerRefreshAsync();
+        return ResponseEntity.accepted().body(
+                Map.of("message", "数据更新已开始", "isRefreshing", true)
+        );
     }
 }

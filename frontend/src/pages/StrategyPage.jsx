@@ -5,6 +5,7 @@ import StrategySelector, { STRATEGIES } from '../components/StrategySelector';
 import FilterPanel from '../components/FilterPanel';
 import StockTable from '../components/StockTable';
 import RiskPanel from '../components/RiskPanel';
+import DataFreshnessIndicator from '../components/DataFreshnessIndicator';
 import { screenStocks } from '../services/api';
 
 const DEFAULT_SORT = {
@@ -92,6 +93,11 @@ export default function StrategyPage() {
                 本工具仅用于股票筛选与信息展示，不构成任何投资建议。请结合自身情况独立决策，投资有风险，入市需谨慎。
               </p>
             </div>
+          </section>
+
+          {/* ═══ Zone 1.5: Data freshness indicator ═══ */}
+          <section className="mb-6 animate-fade-in-up delay-150">
+            <DataFreshnessIndicator />
           </section>
 
           {/* ═══ Zone 2: Strategy templates ═══ */}

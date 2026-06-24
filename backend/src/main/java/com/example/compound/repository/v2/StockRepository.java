@@ -1,5 +1,6 @@
 package com.example.compound.repository.v2;
 
+import com.example.compound.dto.v2.DataStatusDto;
 import com.example.compound.dto.v2.StockItemDto;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -7,6 +8,9 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -71,5 +75,67 @@ public class StockRepository {
             int v = rs.getInt(column);
             return rs.wasNull() ? null : v;
         }
+    }
+
+    /**
+     * 查询数据状态 — 从 data_log 表获取最近一次更新信息。
+     */
+    public DataStatusDto getDataStatus() {
+        DataStatusDto dto = new DataStatusDto();
+        dto.setRefreshing(false);
+
+        // 最近一次成功的更新
+        List<DataStatusDto> successRows = jdbc.query(
+                "SELECT run_at, stock_count FROM data_log WHERE status = 'SUCCESS' ORDER BY id DESC LIMIT 1",
+                (rs, rowNum) -> {
+                    DataStatusDto d = new DataStatusDto();
+                    d.setLastUpdated(rs.getString("run_at"));
+                    d.setStockCount(rs.getInt("stock_count"));
+                    return d;
+                });
+
+        // 最近一次任意状态（用于检测失败）
+        List<DataStatusDto> latestRows = jdbc.query(
+                "SELECT status, error_msg FROM data_log ORDER BY id DESC LIMIT 1",
+                (rs, rowNum) -> {
+                    DataStatusDto d = new DataStatusDto();
+                    d.setLastStatus(rs.getString("status"));
+                    d.setLastError(rs.getString("error_msg"));
+                    return d;
+                });
+
+        if (successRows.isEmpty()) {
+            // 从未成功更新过
+            dto.setLastUpdated(null);
+            dto.setStockCount(0);
+            dto.setStaleMinutes(-1);
+            dto.setLastStatus(latestRows.isEmpty() ? "NO_DATA" :
+                    latestRows.get(0).getLastStatus() != null ? latestRows.get(0).getLastStatus() : "NO_DATA");
+            dto.setLastError(latestRows.isEmpty() ? null : latestRows.get(0).getLastError());
+        } else {
+            DataStatusDto success = successRows.get(0);
+            dto.setLastUpdated(success.getLastUpdated());
+            dto.setStockCount(success.getStockCount());
+
+            // 计算距今分钟数
+            try {
+                DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                LocalDateTime updated = LocalDateTime.parse(success.getLastUpdated(), fmt);
+                dto.setStaleMinutes(Duration.between(updated, LocalDateTime.now()).toMinutes());
+            } catch (Exception e) {
+                dto.setStaleMinutes(-1);
+            }
+
+            // 最新状态
+            if (latestRows.isEmpty()) {
+                dto.setLastStatus("SUCCESS");
+                dto.setLastError(null);
+            } else {
+                dto.setLastStatus(latestRows.get(0).getLastStatus());
+                dto.setLastError(latestRows.get(0).getLastError());
+            }
+        }
+
+        return dto;
     }
 }

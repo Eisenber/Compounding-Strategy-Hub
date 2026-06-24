@@ -14,6 +14,7 @@ E:\复利选股\backend\src\main\java\com\example\compound\dto\knowledge\Knowled
 E:\复利选股\backend\src\main\java\com\example\compound\dto\knowledge\KnowledgeSourceDto.java
 E:\复利选股\backend\src\main\java\com\example\compound\dto\ScenarioInput.java
 E:\复利选股\backend\src\main\java\com\example\compound\dto\ScenarioResult.java
+E:\复利选股\backend\src\main\java\com\example\compound\dto\v2\DataStatusDto.java
 E:\复利选股\backend\src\main\java\com\example\compound\dto\v2\ScreenRequestDto.java
 E:\复利选股\backend\src\main\java\com\example\compound\dto\v2\ScreenResponseDto.java
 E:\复利选股\backend\src\main\java\com\example\compound\dto\v2\StockItemDto.java
@@ -24,6 +25,7 @@ E:\复利选股\backend\src\main\java\com\example\compound\exception\GlobalExcep
 E:\复利选股\backend\src\main\java\com\example\compound\repository\v2\StockRepository.java
 E:\复利选股\backend\src\main\java\com\example\compound\service\CompoundService.java
 E:\复利选股\backend\src\main\java\com\example\compound\service\CompoundServiceImpl.java
+E:\复利选股\backend\src\main\java\com\example\compound\service\DataRefreshService.java
 E:\复利选股\backend\src\main\java\com\example\compound\service\knowledge\KnowledgeAnswerGenerator.java
 E:\复利选股\backend\src\main\java\com\example\compound\service\knowledge\KnowledgeBaseService.java
 E:\复利选股\backend\src\main\java\com\example\compound\service\knowledge\KnowledgeChunk.java

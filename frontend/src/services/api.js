@@ -167,3 +167,46 @@ export async function reindexKnowledgeBase() {
   }
   return res.json();
 }
+
+// ==================== V2 数据状态接口 ====================
+
+/**
+ * Fetch data freshness status.
+ * @returns {Promise<{
+ *   lastUpdated: string|null,
+ *   stockCount: number,
+ *   lastStatus: string,
+ *   lastError: string|null,
+ *   staleMinutes: number,
+ *   isRefreshing: boolean
+ * }>}
+ */
+export async function getDataStatus() {
+  const res = await fetch(`${API_BASE}/v2/strategies/data-status`);
+  if (!res.ok) {
+    throw new Error(`获取数据状态失败 (${res.status})`);
+  }
+  return res.json();
+}
+
+/**
+ * Manually trigger a data refresh.
+ * @returns {Promise<{message: string, isRefreshing: boolean}>}
+ */
+export async function triggerDataRefresh() {
+  const res = await fetch(`${API_BASE}/v2/strategies/refresh`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    let msg = `触发更新失败 (${res.status})`;
+    try {
+      const err = JSON.parse(body);
+      msg = err.error || err.message || msg;
+    } catch {
+      // use default msg
+    }
+    throw new Error(msg);
+  }
+  return res.json();
+}

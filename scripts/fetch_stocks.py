@@ -61,6 +61,16 @@ def init_db(conn):
 
 import time
 
+
+def safe_float(val):
+    """将值转为 float，None/'-'/空字符串 返回 None"""
+    if val is None or val == "-" or val == "":
+        return None
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return None
+
 def with_retry(func, name, max_retries=3, base_delay=5):
     """带重试的API调用包装器：指数退避 + 最大重试次数"""
     for attempt in range(1, max_retries + 1):
@@ -73,132 +83,114 @@ def with_retry(func, name, max_retries=3, base_delay=5):
             print(f"      [{name}] 第{attempt}次失败: {e}，{delay}s后重试...", file=sys.stderr)
             time.sleep(delay)
 
-def _do_fetch_spot():
-    """直接调用东方财富 HTTP API 逐页拉取全A股行情，带逐页重试和指数退避"""
+def fetch_spot_data():
+    """
+    拉取全A股实时行情（腾讯源 + Sina 股票列表备用），包含 PE/PB/总市值。
+
+    数据来源：
+      - akshare stock_zh_a_spot (Sina) → 全量股票代码和名称
+      - 腾讯行情 API → 实时价格、PE(TTM)、PB、总市值
+    """
     import requests
+    import re
+    import akshare as ak
 
-    url = "http://82.push2.eastmoney.com/api/qt/clist/get"
+    # ── 步骤1: 从 akshare (Sina) 获取全量股票代码 ──
+    print("      [1a] 从 Sina 获取全量股票列表...")
+    try:
+        sina_df = ak.stock_zh_a_spot()
+        print(f"           获取到 {len(sina_df)} 只股票")
+    except Exception as e:
+        raise RuntimeError(f"Sina 股票列表获取失败: {e}")
+
+    # ── 步骤2: 构造腾讯行情查询代码 ──
+    # Sina 的 stock_zh_a_spot 返回的代码已带前缀 (sh600519, sz000001, bj920000)
+    # 与腾讯格式一致，直接使用即可
+    codes = [str(row["代码"]) for _, row in sina_df.iterrows()]
+    # 用纯数字代码映射名称（腾讯返回的 symbol 无前缀）
+    code_to_name = {}
+    for _, row in sina_df.iterrows():
+        raw_code = str(row["代码"])
+        # Sina 代码格式: sh600519 → 提取 600519
+        numeric = raw_code[2:] if len(raw_code) > 2 and raw_code[:2].isalpha() else raw_code
+        code_to_name[numeric] = str(row["名称"])
+
+    # ── 步骤3: 批量查询腾讯行情 API ──
+    print(f"      [1b] 从腾讯批量拉取行情 (共 {len(codes)} 只)...")
     all_pages = []
-    page_size = 500  # 请求500，但API实际最多返回100
-    max_pages = 60   # 5534只 / ~100每页 ≈ 56页，留余量到60
+    batch_size = 80  # 每批 80 只
+    total_batches = (len(codes) + batch_size - 1) // batch_size
 
-    def _create_session():
-        s = requests.Session()
-        s.headers.update({
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-            "Accept": "*/*",
-            "Accept-Language": "zh-CN,zh;q=0.9",
-            "Referer": "http://quote.eastmoney.com/",
-        })
-        return s
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Referer": "https://finance.qq.com/",
+    })
 
-    session = _create_session()
+    for i in range(0, len(codes), batch_size):
+        batch = codes[i:i + batch_size]
+        batch_num = i // batch_size + 1
+        print(f"            批次 {batch_num}/{total_batches}...", end="\r")
 
-    for page in range(1, max_pages + 1):
-        params = {
-            "pn": page,
-            "pz": page_size,
-            "po": 1,
-            "np": 1,
-            "ut": "bd1d9ddb04089700cf9c27f6f7426281",
-            "fltt": 2,
-            "invt": 2,
-            "fid": "f3",
-            "fs": "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23",
-            "fields": "f2,f12,f14,f9,f23,f20",
-            "_": int(time.time() * 1000),
-        }
-
-        # 逐页重试（最多3次，指数退避）
-        success = False
-        for attempt in range(1, 4):
+        # 逐批重试最多2次
+        for attempt in range(2):
             try:
-                resp = session.get(url, params=params, timeout=30)
+                url = f"http://qt.gtimg.cn/q={','.join(batch)}"
+                resp = session.get(url, timeout=30)
                 resp.raise_for_status()
-                data = resp.json()
-                if data is None:
-                    if attempt < 3:
-                        time.sleep(2 * attempt)
-                        continue
-                    break
-                diff_list = (data.get("data") or {}).get("diff") or []
-                if not diff_list:
-                    success = True
-                    break  # 无更多数据，正常结束
-                for item in diff_list:
-                    all_pages.append({
-                        "symbol": str(item.get("f12", "")),
-                        "name": str(item.get("f14", "")),
-                        "price": item.get("f2"),
-                        "pe_ttm": item.get("f9"),
-                        "pb": item.get("f23"),
-                        "market_cap_raw": item.get("f20"),
-                    })
-                success = True
+                # 腾讯返回编码为 gbk，需要正确解码
+                resp.encoding = 'gbk'
+                text = resp.text
                 break
             except Exception as e:
-                if attempt < 3:
-                    delay = 3 * (2 ** (attempt - 1))
-                    time.sleep(delay)
-                else:
-                    # 3次都失败，打印一次警告
-                    pass
+                if attempt == 1:
+                    print(f"\n            [WARN] 批次 {batch_num} 请求失败: {e}")
+                    text = ""
+                    break
+                time.sleep(2)
 
-        if not success:
-            # 只在第一次遇到失败页时简要提示
-            pass
+        # 解析每行数据: v_sh600519="字段1~字段2~..."
+        for line in text.strip().split("\n"):
+            if not line.strip():
+                continue
+            match = re.match(r'v_(\w+)="(.*)"', line.strip())
+            if not match:
+                continue
+            fields = match.group(2).split("~")
+            if len(fields) < 67:
+                continue
+            try:
+                symbol = fields[2]
+                all_pages.append({
+                    "symbol": symbol,
+                    "name": code_to_name.get(symbol, fields[1]),
+                    "price": safe_float(fields[3]),
+                    "pe_ttm": safe_float(fields[65]),      # PE(TTM)
+                    "pb": safe_float(fields[66]),           # PB
+                    "market_cap_raw": safe_float(fields[44]),  # 总市值(亿元)
+                })
+            except (IndexError, ValueError):
+                continue
 
-        # 每10页重建 session 避免连接老化
-        if page % 10 == 0:
-            session.close()
-            session = _create_session()
-            time.sleep(1)
-        else:
-            time.sleep(0.5)
+        time.sleep(0.15)  # 请求间隔
 
-    print(f"\n      行情累计拉取 {len(all_pages)} 条，共请求 {max_pages} 页")
     session.close()
+    print(f"\n            行情累计拉取 {len(all_pages)} 条（共 {total_batches} 批）")
 
     if not all_pages:
         raise RuntimeError("未能获取任何行情数据")
 
     df = pd.DataFrame(all_pages)
-
-    # 安全转换数值列：东方财富用 "-" 表示无数据
-    def safe_float(val):
-        """将值转为 float，'-'/None/NaN 返回 None"""
-        if val is None or val == "-" or val == "":
-            return None
-        try:
-            return float(val)
-        except (ValueError, TypeError):
-            return None
-
-    for col in ["price", "pe_ttm", "pb"]:
-        if col in df.columns:
-            df[col] = df[col].apply(safe_float)
-
-    # 总市值转换为亿元
-    if "market_cap_raw" in df.columns:
-        df["market_cap"] = df["market_cap_raw"].apply(
-            lambda x: round(safe_float(x) / 1e8, 2) if safe_float(x) and safe_float(x) > 0 else None
-        )
-        df = df.drop(columns=["market_cap_raw"])
-    return df
-
-def fetch_spot_data():
-    """拉取全A股实时行情（东方财富源），带重试"""
-    result = with_retry(_do_fetch_spot, "行情数据", max_retries=2, base_delay=5)
-    # 打印重试信息
-    if result is not None:
-        df = result
-        print(f"      共获取到 {len(df)} 只股票")
-    else:
-        raise RuntimeError("获取行情数据失败")
+    # 总市值已经是亿元单位
+    df["market_cap"] = df["market_cap_raw"].apply(
+        lambda x: round(float(x), 2) if safe_float(x) and safe_float(x) > 0 else None
+    )
+    df = df.drop(columns=["market_cap_raw"])
+    print(f"      共获取到 {len(df)} 只股票")
     return df
 
 
@@ -542,6 +534,16 @@ def write_to_db(conn, df):
 
 def main():
     import os
+    import argparse
+
+    parser = argparse.ArgumentParser(description="拉取全A股数据到 SQLite")
+    parser.add_argument("--db-path", default=None, help="SQLite 数据库路径（默认: backend/data/compound.db）")
+    args = parser.parse_args()
+
+    # 优先使用命令行参数，否则使用脚本同目录推导
+    global DB_PATH
+    if args.db_path:
+        DB_PATH = args.db_path
 
     # 确保 data 目录存在
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
@@ -568,6 +570,17 @@ def main():
 
     except Exception as e:
         print(f"[FAIL] 采集失败: {e}", file=sys.stderr)
+        # 即使未到达 write_to_db，也尽力写入 FAILED 日志
+        try:
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO data_log (run_at, stock_count, status, error_msg) VALUES (?, ?, ?, ?)",
+                (now, 0, "FAILED", str(e)[:500])
+            )
+            conn.commit()
+        except Exception:
+            pass  # 尽最大努力
         sys.exit(1)
     finally:
         conn.close()
