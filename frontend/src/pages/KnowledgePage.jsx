@@ -151,7 +151,7 @@ export default function KnowledgePage() {
           </div>
         </section>
 
-        <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 items-start">
+        <div className="max-w-4xl mx-auto">
           <section className="card-elevated p-6 md:p-7">
             <form onSubmit={handleAsk}>
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
@@ -170,6 +170,19 @@ export default function KnowledgePage() {
                   />
                   使用生成式回答
                 </label>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                {SUGGESTED_QUESTIONS.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setQuestion(item)}
+                    className="rounded-full border border-cream-200 bg-cream-50 px-4 py-1.5 text-xs text-ink-500 hover:border-gold-300 hover:bg-gold-50/50 transition-colors"
+                  >
+                    {item}
+                  </button>
+                ))}
               </div>
 
               <textarea
@@ -230,58 +243,6 @@ export default function KnowledgePage() {
                 </div>
               </div>
             )}
-          </section>
-
-          <section className="space-y-6">
-            <div className="card p-6">
-              <h3 className="text-sm font-semibold text-ink-800 mb-3">推荐问题</h3>
-              <div className="space-y-3">
-                {SUGGESTED_QUESTIONS.map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => setQuestion(item)}
-                    className="w-full text-left rounded-2xl border border-cream-200 bg-cream-50 px-4 py-3 text-sm text-ink-600 hover:border-gold-300 hover:bg-gold-50/50 transition-colors"
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="card p-6">
-              <h3 className="text-sm font-semibold text-ink-800 mb-3">命中文档</h3>
-              {!answer?.sources?.length ? (
-                <p className="text-sm text-ink-400 leading-relaxed">
-                  问答完成后，这里会显示命中的文档片段和分数，方便你回溯到原始资料。
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {answer.sources.map((source, index) => (
-                    <div key={`${source.path}-${index}`} className="rounded-2xl border border-cream-200 bg-white p-4">
-                      <div className="flex items-center justify-between gap-3 mb-2">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-ink-800 truncate">{source.title}</p>
-                          <p className="text-xs text-ink-400 truncate">{source.path}</p>
-                        </div>
-                        <span className="badge bg-gold-50 text-gold-700 border border-gold-100 shrink-0">
-                          {source.score}
-                        </span>
-                      </div>
-                      <p className="text-sm text-ink-500 leading-6">{source.excerpt}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="card p-6">
-              <h3 className="text-sm font-semibold text-ink-800 mb-3">接口说明</h3>
-              <div className="text-sm text-ink-500 leading-7">
-                <p>提问接口：POST /api/v1/knowledge/ask</p>
-                <p>重建索引：POST /api/v1/knowledge/reindex</p>
-                <p>环境变量：OPENAI_API_KEY、OPENAI_MODEL，可选 OPENAI_BASE_URL</p>
-              </div>
-            </div>
           </section>
         </div>
       </main>
