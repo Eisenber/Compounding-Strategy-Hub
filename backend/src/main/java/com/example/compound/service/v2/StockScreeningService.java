@@ -206,6 +206,20 @@ public class StockScreeningService {
             case StrategyTemplateService.QUALITY_GROWTH ->
                     String.format("ROE=%s%%、营收增长=%s%%、净利润增长=%s%% 同时达到成长条件",
                             fmtD(s.getRoe()), fmtD(s.getRevenueGrowth()), fmtD(s.getProfitGrowth()));
+            case StrategyTemplateService.PEG_VALUATION -> {
+                Double peg = s.getPeg();
+                String pegStr = peg != null ? String.format("%.2f", peg) : "N/A";
+                yield String.format("PEG=%s（PE=%s÷增速%s%%），成长相对估值偏低",
+                        pegStr, fmtD(s.getPeTtm()), fmtD(s.getProfitGrowth()));
+            }
+            case StrategyTemplateService.MAGIC_FORMULA -> {
+                Double ey = s.getPeTtm() != null && s.getPeTtm() > 0
+                        ? 100.0 / s.getPeTtm() : null;
+                yield String.format("ROE=%s%%且盈利收益率=%s%%（PE=%s），兼备质量与价格",
+                        fmtD(s.getRoe()),
+                        ey != null ? String.format("%.1f", ey) : "缺失",
+                        fmtD(s.getPeTtm()));
+            }
             default -> "符合当前策略筛选条件";
         };
     }
@@ -253,6 +267,22 @@ public class StockScreeningService {
                 }
                 tags.add("成长不确定性风险");
             }
+            case StrategyTemplateService.PEG_VALUATION -> {
+                if (pg != null && pg < 15 && pg > 0) {
+                    tags.add("盈利增速放缓风险");
+                }
+                if (s.getPeg() != null && s.getPeg() > 0.8) {
+                    tags.add("成长性价比不足风险");
+                }
+            }
+            case StrategyTemplateService.MAGIC_FORMULA -> {
+                if (dr != null && dr > 50) {
+                    tags.add("杠杆率风险");
+                }
+                if (pe != null && pe < 5) {
+                    tags.add("低PE陷阱风险");
+                }
+            }
         }
 
         // 至少一个标签
@@ -290,6 +320,7 @@ public class StockScreeningService {
             case "revenueGrowth" -> Comparator.comparing(StockItemDto::getRevenueGrowth, nullSafeComparator(desc));
             case "profitGrowth" -> Comparator.comparing(StockItemDto::getProfitGrowth, nullSafeComparator(desc));
             case "marketCap" -> Comparator.comparing(StockItemDto::getMarketCap, nullSafeComparator(desc));
+            case "peg" -> Comparator.comparing(StockItemDto::getPeg, nullSafeComparator(desc));
             default -> Comparator.comparing(StockItemDto::getPeTtm, nullSafeComparator(desc));
         };
         stocks.sort(cmp);
@@ -300,6 +331,8 @@ public class StockScreeningService {
             case StrategyTemplateService.LOW_VALUATION -> "peTtm";
             case StrategyTemplateService.HIGH_DIVIDEND -> "dividendYield";
             case StrategyTemplateService.QUALITY_GROWTH -> "roe";
+            case StrategyTemplateService.PEG_VALUATION -> "peg";
+            case StrategyTemplateService.MAGIC_FORMULA -> "roe";
             default -> "peTtm";
         };
     }
@@ -309,6 +342,8 @@ public class StockScreeningService {
             case StrategyTemplateService.LOW_VALUATION -> "asc";
             case StrategyTemplateService.HIGH_DIVIDEND -> "desc";
             case StrategyTemplateService.QUALITY_GROWTH -> "desc";
+            case StrategyTemplateService.PEG_VALUATION -> "asc";
+            case StrategyTemplateService.MAGIC_FORMULA -> "desc";
             default -> "asc";
         };
     }
