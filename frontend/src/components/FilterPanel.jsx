@@ -31,6 +31,23 @@ const DEFAULT_FILTERS = {
     excludeSt: true,
     excludeSuspended: true,
   },
+  PEG_VALUATION: {
+    maxPeg: 1.0,
+    minRoe: 10,
+    minProfitGrowth: 10,
+    maxPe: 50,
+    excludeSt: true,
+    excludeSuspended: true,
+    minListingDays: 180,
+  },
+  MAGIC_FORMULA: {
+    minRoe: 15,
+    maxPe: 25,
+    maxDebtRatio: 50,
+    excludeSt: true,
+    excludeSuspended: true,
+    minListingDays: 365,
+  },
 };
 
 /**
@@ -44,6 +61,7 @@ const FILTER_META = {
   minDividendYield: { label: '股息率下限', shortLabel: '股息率 ≥', step: 0.1, min: 0, max: 20, unit: '%' },
   maxDebtRatio: { label: '资产负债率上限', shortLabel: '负债率 ≤', step: 1, min: 0, max: 100, unit: '%' },
   minRevenueGrowth: { label: '营收增长率下限', shortLabel: '营收增长 ≥', step: 1, min: -100, max: 200, unit: '%' },
+  maxPeg: { label: 'PEG 上限', shortLabel: 'PEG ≤', step: 0.1, min: 0.1, max: 10, unit: '' },
 };
 
 const FilterPanel = memo(function FilterPanel({ strategyCode, onScreen, loading }) {

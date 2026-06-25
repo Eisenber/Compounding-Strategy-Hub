@@ -12,6 +12,8 @@ const DEFAULT_SORT = {
   LOW_VALUATION: { key: 'peTtm', dir: 'asc' },
   HIGH_DIVIDEND: { key: 'dividendYield', dir: 'desc' },
   QUALITY_GROWTH: { key: 'roe', dir: 'desc' },
+  PEG_VALUATION: { key: 'peg', dir: 'asc' },
+  MAGIC_FORMULA: { key: 'roe', dir: 'desc' },
 };
 
 export default function StrategyPage() {

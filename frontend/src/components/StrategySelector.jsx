@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Gem, Percent, TrendingUp, Check } from 'lucide-react';
+import { Gem, Percent, TrendingUp, Check, Activity, Sparkles } from 'lucide-react';
 
 const STRATEGIES = [
   {
@@ -25,6 +25,22 @@ const STRATEGIES = [
     description: '筛选盈利质量和成长性较好的公司',
     what: '适合偏好业绩质量与成长性的投资者',
     defaults: 'ROE ≥ 12% · 营收增长 ≥ 15% · 净利润增长 ≥ 15% · PE ≤ 40',
+  },
+  {
+    code: 'PEG_VALUATION',
+    name: 'PEG估值策略',
+    icon: Activity,
+    description: '用PEG指标寻找成长被低估的公司',
+    what: '适合关注成长性价比的投资者',
+    defaults: 'PEG ≤ 1.0 · ROE ≥ 10% · 利润增长 ≥ 10% · PE ≤ 50',
+  },
+  {
+    code: 'MAGIC_FORMULA',
+    name: '魔法公式策略',
+    icon: Sparkles,
+    description: '彼得·林奇经典 — 好公司 + 好价格',
+    what: '适合看重基本面质量与买入价格的投资者',
+    defaults: 'ROE ≥ 15% · PE ≤ 25 · 负债率 ≤ 50%',
   },
 ];
 
