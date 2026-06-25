@@ -160,4 +160,16 @@ public class StockItemDto {
     public void setRiskTags(List<String> riskTags) {
         this.riskTags = riskTags;
     }
+
+    /**
+     * 计算 PEG（市盈率相对盈利增长比率）。
+     * PEG = PE(TTM) ÷ 净利润增长率(%)。
+     * 返回 null 当数据缺失或增速 ≤ 0（PEG 无意义）。
+     */
+    public Double getPeg() {
+        if (peTtm == null || profitGrowth == null || profitGrowth <= 0) {
+            return null;
+        }
+        return peTtm / profitGrowth;
+    }
 }
