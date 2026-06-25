@@ -20,6 +20,8 @@ public class StrategyTemplateService {
     public static final String LOW_VALUATION = "LOW_VALUATION";
     public static final String HIGH_DIVIDEND = "HIGH_DIVIDEND";
     public static final String QUALITY_GROWTH = "QUALITY_GROWTH";
+    public static final String PEG_VALUATION = "PEG_VALUATION";
+    public static final String MAGIC_FORMULA = "MAGIC_FORMULA";
 
     private static final List<StrategyTemplateDto> TEMPLATES = List.of(
             new StrategyTemplateDto(
@@ -36,6 +38,16 @@ public class StrategyTemplateService {
                     QUALITY_GROWTH,
                     "质量成长",
                     "筛选盈利质量和成长性较好的股票 — 优先关注ROE、营收与利润同时保持增长的公司"
+            ),
+            new StrategyTemplateDto(
+                    PEG_VALUATION,
+                    "PEG估值",
+                    "用PEG指标（市盈率÷盈利增长率）寻找成长被低估的股票 — PEG<1 表示成长可能被市场低估"
+            ),
+            new StrategyTemplateDto(
+                    MAGIC_FORMULA,
+                    "魔法公式",
+                    "彼得·林奇经典策略 — 结合高资本回报率(ROE)与高盈利收益率(1/PE)，寻找又好又便宜的公司"
             )
     );
 
@@ -54,6 +66,8 @@ public class StrategyTemplateService {
             case LOW_VALUATION -> Optional.of(buildLowValuationDetail());
             case HIGH_DIVIDEND -> Optional.of(buildHighDividendDetail());
             case QUALITY_GROWTH -> Optional.of(buildQualityGrowthDetail());
+            case PEG_VALUATION -> Optional.of(buildPegValuationDetail());
+            case MAGIC_FORMULA -> Optional.of(buildMagicFormulaDetail());
             default -> Optional.empty();
         };
     }
@@ -121,6 +135,43 @@ public class StrategyTemplateService {
         filters.put("maxPe", 40);
         filters.put("excludeSt", true);
         filters.put("excludeSuspended", true);
+        d.setFilters(filters);
+        return d;
+    }
+
+    private TemplateDetailDto buildPegValuationDetail() {
+        TemplateDetailDto d = new TemplateDetailDto();
+        d.setCode(PEG_VALUATION);
+        d.setName("PEG估值");
+        d.setExplanation("该策略用PEG（市盈率÷盈利增长率）寻找成长被低估的公司。"
+                + "适用场景：关注成长性价比、希望避免为高增长支付过高溢价的用户。");
+        d.setRiskNote("PEG依赖历史盈利增速，未来增速放缓会导致PEG升高；增速为负时PEG无意义。");
+        Map<String, Object> filters = new LinkedHashMap<>();
+        filters.put("maxPeg", 1.0);
+        filters.put("minRoe", 10);
+        filters.put("minProfitGrowth", 10);
+        filters.put("maxPe", 50);
+        filters.put("excludeSt", true);
+        filters.put("excludeSuspended", true);
+        filters.put("minListingDays", 180);
+        d.setFilters(filters);
+        return d;
+    }
+
+    private TemplateDetailDto buildMagicFormulaDetail() {
+        TemplateDetailDto d = new TemplateDetailDto();
+        d.setCode(MAGIC_FORMULA);
+        d.setName("魔法公式");
+        d.setExplanation("彼得·林奇经典策略：好公司（高ROE）+ 好价格（高盈利收益率=1/PE）。"
+                + "适用场景：偏好基本面质量且在意买入价格的用户。");
+        d.setRiskNote("ROE可能包含非经常性收益；低PE可能反映市场对盈利持续性的质疑。");
+        Map<String, Object> filters = new LinkedHashMap<>();
+        filters.put("minRoe", 15);
+        filters.put("maxPe", 25);
+        filters.put("maxDebtRatio", 50);
+        filters.put("excludeSt", true);
+        filters.put("excludeSuspended", true);
+        filters.put("minListingDays", 365);
         d.setFilters(filters);
         return d;
     }
