@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * 策略模板服务 — 管理3个新手策略模板的元数据和默认条件
+ * 策略模板服务 — 管理5个选股策略模板的元数据和默认条件
  */
 @Service
 public class StrategyTemplateService {

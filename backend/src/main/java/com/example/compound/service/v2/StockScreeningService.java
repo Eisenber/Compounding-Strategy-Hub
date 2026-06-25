@@ -274,6 +274,7 @@ public class StockScreeningService {
                 if (s.getPeg() != null && s.getPeg() > 0.8) {
                     tags.add("成长性价比不足风险");
                 }
+                if (isCompetitiveIndustry(s)) tags.add("行业竞争风险");
             }
             case StrategyTemplateService.MAGIC_FORMULA -> {
                 if (dr != null && dr > 50) {
@@ -299,6 +300,23 @@ public class StockScreeningService {
                         s.getIndustry().contains("有色") ||
                         s.getIndustry().contains("化工") ||
                         s.getIndustry().contains("煤炭")
+        );
+    }
+
+    /** 判断是否竞争性行业（科技/医药等） */
+    private boolean isCompetitiveIndustry(StockItemDto s) {
+        return s.getIndustry() != null && (
+                s.getIndustry().contains("科技") ||
+                        s.getIndustry().contains("医药") ||
+                        s.getIndustry().contains("生物") ||
+                        s.getIndustry().contains("半导体") ||
+                        s.getIndustry().contains("芯片") ||
+                        s.getIndustry().contains("软件") ||
+                        s.getIndustry().contains("互联网") ||
+                        s.getIndustry().contains("IT") ||
+                        s.getIndustry().contains("电子") ||
+                        s.getIndustry().contains("计算机") ||
+                        s.getIndustry().contains("通信")
         );
     }
 
