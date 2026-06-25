@@ -118,6 +118,8 @@ public class StockScreeningService {
             case StrategyTemplateService.LOW_VALUATION -> passesLowValuation(s, filters);
             case StrategyTemplateService.HIGH_DIVIDEND -> passesHighDividend(s, filters);
             case StrategyTemplateService.QUALITY_GROWTH -> passesQualityGrowth(s, filters);
+            case StrategyTemplateService.PEG_VALUATION -> passesPegValuation(s, filters);
+            case StrategyTemplateService.MAGIC_FORMULA -> passesMagicFormula(s, filters);
             default -> false;
         };
     }
@@ -154,6 +156,36 @@ public class StockScreeningService {
         if (exceeds(s.getProfitGrowth(), getDouble(filters, "minProfitGrowth"), false)) return false;
         if (exceeds(s.getDebtRatio(), getDouble(filters, "maxDebtRatio"), true)) return false;
         if (exceeds(s.getPeTtm(), getDouble(filters, "maxPe"), true)) return false;
+        return true;
+    }
+
+    private boolean passesPegValuation(StockItemDto s, Map<String, Object> filters) {
+        // 亏损公司 PEG 无意义
+        if (s.getPeTtm() != null && s.getPeTtm() < 0) return false;
+        // 负增速 PEG 无意义
+        if (s.getProfitGrowth() != null && s.getProfitGrowth() <= 0) return false;
+        // PEG 检查
+        Double maxPeg = getDouble(filters, "maxPeg");
+        Double peg = s.getPeg();
+        if (maxPeg != null && peg != null && peg > maxPeg) return false;
+        // ROE 门槛
+        if (exceeds(s.getRoe(), getDouble(filters, "minRoe"), false)) return false;
+        // 增速门槛
+        if (exceeds(s.getProfitGrowth(), getDouble(filters, "minProfitGrowth"), false)) return false;
+        // PE 上限
+        if (exceeds(s.getPeTtm(), getDouble(filters, "maxPe"), true)) return false;
+        return true;
+    }
+
+    private boolean passesMagicFormula(StockItemDto s, Map<String, Object> filters) {
+        // 亏损公司排除
+        if (s.getPeTtm() != null && s.getPeTtm() < 0) return false;
+        // 高质量：ROE 门槛
+        if (exceeds(s.getRoe(), getDouble(filters, "minRoe"), false)) return false;
+        // 好价格：PE 上限
+        if (exceeds(s.getPeTtm(), getDouble(filters, "maxPe"), true)) return false;
+        // 杠杆控制
+        if (exceeds(s.getDebtRatio(), getDouble(filters, "maxDebtRatio"), true)) return false;
         return true;
     }
 
